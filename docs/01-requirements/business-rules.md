@@ -2,7 +2,7 @@
 
 **Document ID:** HLX-BRS-001  
 **Version:** 0.1.0  
-**Status:** Draft — Pending Review  
+**Status:** Approved — M1 Requirements Baseline
 **Project:** HelixURL  
 **Target Release:** MVP v0.1.0  
 **Document Owner:** Project Owner  
@@ -83,7 +83,7 @@ Rule status values:
 - **Deferred:** Requires a later design or operational decision.
 - **Superseded:** Replaced by a documented later rule.
 
-All rules in this initial draft are Proposed unless explicitly inherited from the accepted Scope Statement.
+The M1 baseline is approved; M2 decisions are reconciled in `decision-log.md`. Explicitly open retention and operational details remain tracked.
 
 ## 4. Destination URL Validation Rules
 
@@ -263,11 +263,11 @@ The collision handling strategy must preserve database integrity under concurren
 **Classification:** Integrity  
 **Related Requirements:** FR-012, FR-015
 
-Short codes must comply with a documented character set, length policy, and routing compatibility requirements.
+MVP short codes must be eight-character, case-sensitive Base62 values generated using `SecureRandom` (BD-004). Database uniqueness and bounded retries protect against collisions.
 
 The specific format and generation algorithm will be determined during M2 — System Design.
 
-**Status:** Deferred — Design decision required.
+**Status:** Approved — BD-004.
 
 ### BR-017 — Short URL Construction
 
@@ -338,7 +338,7 @@ A request exceeding this limit must be rejected.
 
 Expiration input must use an unambiguous timestamp representation with an explicit timezone offset.
 
-ISO 8601 / RFC 3339-compatible timestamps are proposed.
+RFC 3339 timestamps with explicit UTC offset and second-level precision are required (BD-003).
 
 Examples:
 
@@ -354,7 +354,7 @@ The API specification must define the accepted precision and format.
 
 Expiration must be evaluated using a consistent time reference.
 
-UTC-based comparison is proposed.
+Expiration comparisons use UTC instants (BD-003, TD-005).
 
 A mapping is expired when:
 
@@ -424,7 +424,7 @@ The redirect response must contain a valid `Location` header identifying the sto
 
 Redirect cache behaviour must be explicitly defined in the API specification.
 
-**Status:** Approved — BD-005. Redirect caching remains proposed (BD-012).
+**Status:** Approved — BD-005 and BD-012. HTTP 302 and 404 responses include `Cache-Control: no-store`.
 
 ### BR-031 — Unknown, Expired, and Disabled Link Responses
 
@@ -507,7 +507,7 @@ The exact thresholds, enforcement scope, and storage mechanism remain to be dete
 
 Requests exceeding the applicable rate limit must receive an appropriate HTTP error response.
 
-HTTP 429 Too Many Requests is proposed.
+HTTP 429 Too Many Requests is required when the approved limit of 10 creation requests/minute/client is exceeded (BD-007).
 
 ### BR-040 — Abuse Controls Before Public Exposure
 
@@ -670,16 +670,16 @@ The following decisions require review or further specification.
 |---|---|---|---|---|
 | BD-001 | Maximum destination URL length | 2,048 characters | M1 | Approved |
 | BD-002 | Maximum expiration duration | 365 days | M1 | Approved |
-| BD-003 | Expiration timestamp format | ISO 8601 / RFC 3339-compatible | M1 | Proposed |
-| BD-004 | Short-code format | Deferred to M2 | M2 | Deferred |
+| BD-003 | Expiration timestamp format | ISO 8601 / RFC 3339-compatible | M1 | Approved |
+| BD-004 | Short-code format | 8-character, case-sensitive Base62 | M2 | Approved |
 | BD-005 | Redirect status code | HTTP 302 Found | M1 | Approved |
 | BD-006 | Unavailable-link response | HTTP 404 Not Found | M1 | Approved |
-| BD-007 | Rate-limit thresholds | Proposed | M1/M2 | Proposed |
-| BD-008 | Destination safety policy | To be refined | M1 | Proposed |
-| BD-009 | Mapping and log retention | To be determined | M1/M2 | Proposed |
-| BD-010 | Request payload size limit | Proposed | M1/M2 | Proposed |
-| BD-011 | Short-code namespace and reserved paths | Deferred to M2 | M2 | Deferred |
-| BD-012 | Redirect caching policy | Proposed | M1/M2 | Proposed |
+| BD-007 | Rate-limit thresholds | 10 creation requests/minute/client | M1/M2 | Approved |
+| BD-008 | Destination safety policy | HTTP/HTTPS, reject userinfo and prohibited IP literals | M1 | Approved |
+| BD-009 | Mapping and log retention | Retention/deletion periods TBD | Before public release | Proposed |
+| BD-010 | Request payload size limit | 8,192 bytes; HTTP 413 | M1/M2 | Approved |
+| BD-011 | Short-code namespace and reserved paths | `/api`, `/actuator` reserved | M2 | Approved |
+| BD-012 | Redirect caching policy | `Cache-Control: no-store` on 302 and 404 | M1/M2 | Approved |
 
 Unresolved decisions must be recorded and must not be silently treated as approved policies.
 
@@ -716,10 +716,10 @@ Changes must be documented and reviewed through the project's version control wo
 | Field | Value |
 |---|---|
 | Document Owner | Project Owner |
-| Review Status | Pending Review |
+| Review Status | Approved — M1 Requirements Baseline |
 | Approval Authority | Project Owner |
 | Approval Date | To be determined |
-| Baseline Status | Not Yet Approved |
+| Baseline Status | Approved — M1 Requirements Baseline |
 
 This document will be reviewed together with the remaining Requirements Engineering deliverables before the M1 baseline is approved.
 

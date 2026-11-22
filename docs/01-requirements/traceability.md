@@ -2,7 +2,7 @@
 
 **Document ID:** HLX-RTM-001  
 **Version:** 0.1.0  
-**Status:** Draft — Pending Review  
+**Status:** Approved — M1 Requirements Baseline
 **Project:** HelixURL  
 **Target Release:** MVP v0.1.0  
 **Document Owner:** Project Owner  
@@ -382,8 +382,8 @@ The following acceptance areas include approved decisions and unresolved busines
 |---|---|---|
 | URL length | AC-010 | BD-001 approved; counting convention deferred to API design |
 | Destination restrictions | AC-013 | BD-008 |
-| Expiration validation | AC-019–AC-021 | BD-002 approved; BD-003 proposed |
-| Redirect behaviour | AC-023, AC-025–AC-030 | BD-005 and BD-006 approved; BD-012 proposed |
+| Expiration validation | AC-019–AC-021 | BD-002 approved; BD-003 approved |
+| Redirect behaviour | AC-023, AC-025–AC-030 | BD-005 and BD-006 approved; BD-012 approved; no-store on 302 and 404 |
 | Rate limiting | AC-035 | BD-007 |
 | Request payload limits | AC-036 | BD-010 |
 | Operator disabling | AC-031–AC-034 | Operational design |
@@ -658,10 +658,10 @@ A complete traceability matrix does not require implementation or test execution
 | Field | Value |
 |---|---|
 | Document Owner | Project Owner |
-| Review Status | Pending Review |
+| Review Status | Approved — M1 Requirements Baseline |
 | Approval Authority | Project Owner |
 | Approval Date | To be determined |
-| Baseline Status | Not Yet Approved |
+| Baseline Status | Approved — M1 Requirements Baseline |
 
 This RTM will be reviewed together with the other M1 documents before the requirements baseline is approved.
 

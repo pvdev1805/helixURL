@@ -2,10 +2,10 @@
 
 **Document ID:** HLX-RDL-001  
 **Version:** 0.1.0  
-**Status:** Draft — Pending Final Review  
+**Status:** Approved — M2 Design Baseline  
 **Project:** HelixURL  
 **Target Release:** MVP v0.1.0  
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-22
 
 ## 1. Purpose
 
@@ -65,11 +65,9 @@ Public responses must not unnecessarily disclose which of these conditions occur
 
 **Affected:** FR-018–FR-020, BR-031, UC-005, AC-023, AC-026–AC-029.
 
-## 3. Proposed Decisions Requiring Approval
-
 ### BD-003 — Expiration Timestamp Format
 
-**Status:** Proposed
+**Status:** Approved
 
 - Accept RFC 3339-compatible timestamps with an explicit UTC offset.
 - Support precision up to whole seconds for MVP input.
@@ -81,9 +79,26 @@ Public responses must not unnecessarily disclose which of these conditions occur
 
 **Affected:** BR-023, BR-024, AC-019, AC-020, AC-064.
 
+### BD-004 — Short-Code Format and Generation
+
+**Status:** Approved
+
+- Generate eight-character, case-sensitive Base62 short codes.
+- Use the alphabet `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`.
+- Use `java.security.SecureRandom`.
+- Enforce uniqueness through the PostgreSQL `short_code` unique constraint.
+- Retry only confirmed short-code uniqueness collisions.
+- Allow a maximum of five persistence attempts.
+- Roll back failed transactions before retrying.
+- Do not expose internal database identifiers through short codes.
+
+**Rationale:** Provides a large code space, reduces predictability, and maintains reliable uniqueness under concurrent creation requests.
+
+**Affected:** BR-016 and related short-code requirements, acceptance criteria, database design, and API contract.
+
 ### BD-007 — Anonymous Creation Rate Limiting
 
-**Status:** Proposed
+**Status:** Approved
 
 - Apply a baseline limit of 10 creation requests per minute per identified client.
 - Reject requests exceeding the limit with HTTP 429 Too Many Requests.
@@ -99,7 +114,7 @@ The rate limit is a baseline abuse control, not a complete anti-abuse solution.
 
 ### BD-008 — Destination Acceptance Policy
 
-**Status:** Proposed
+**Status:** Approved
 
 The public creation API must:
 
@@ -120,6 +135,52 @@ DNS resolution must not be assumed to prove that a destination is safe or trustw
 
 **Affected:** BR-002–BR-009, AC-007–AC-014.
 
+### BD-010 — Request Payload Limit
+
+**Status:** Approved
+
+The URL creation endpoint must enforce a maximum request body size of 8,192 bytes, measured from the HTTP request body payload. Requests exceeding this limit must receive HTTP 413 Content Too Large.
+
+Requests exceeding the approved limit must be rejected without creating a mapping.
+
+The final API contract must specify how the limit is measured and the HTTP response semantics.
+
+**Rationale:** Bounds request processing and reduces unnecessary resource consumption.
+
+**Affected:** BR-042, AC-036.
+
+### BD-011 — Routing Namespace
+
+**Status:** Approved
+
+- Public URL creation uses `/api/v1/urls`.
+- Public redirects use `/{shortCode}`.
+- Reserve `/api` and `/actuator` for application and operational routing.
+- Reserve additional frontend and static asset paths when their routing design is finalised.
+- Generated short codes must not conflict with reserved routing namespaces.
+
+**Rationale:** Prevents application and operational route conflicts with the root-level redirect route.
+
+**Affected:** FR-015, FR-021, API routing and short-code validation.
+
+### BD-012 — Redirect Caching Policy
+
+**Status:** Approved
+
+Successful redirect responses (HTTP 302) and unavailable-link responses (HTTP 404) must include:
+
+`Cache-Control: no-store`
+
+The API contract must document the caching behaviour for redirect and unavailable-link responses.
+
+**Rationale:** Reduces the risk of clients reusing a cached redirect after expiration or administrative disabling.
+
+The application cannot guarantee that every external client or intermediary will honour caching directives.
+
+**Affected:** BR-030, AC-030.
+
+## 3. Proposed Decision — Retention Policy
+
 ### BD-009 — Data Retention
 
 **Status:** Proposed
@@ -134,84 +195,23 @@ DNS resolution must not be assumed to prove that a destination is safe or trustw
 
 **Affected:** BR-026, BR-043–BR-047, AC-024, AC-054.
 
-### BD-010 — Request Payload Limit
-
-**Status:** Proposed
-
-The URL creation endpoint should enforce an 8 KiB maximum request body size.
-
-Requests exceeding the approved limit must be rejected without creating a mapping.
-
-The final API contract must specify how the limit is measured and the HTTP response semantics.
-
-**Rationale:** Bounds request processing and reduces unnecessary resource consumption.
-
-**Affected:** BR-042, AC-036.
-
-### BD-012 — Redirect Caching Policy
-
-**Status:** Proposed
-
-Redirect responses must include:
-
-`Cache-Control: no-store`
-
-The API contract must document the caching behaviour for redirect and unavailable-link responses.
-
-**Rationale:** Reduces the risk of clients reusing a cached redirect after expiration or administrative disabling.
-
-The application cannot guarantee that every external client or intermediary will honour caching directives.
-
-**Affected:** BR-030, AC-030.
-
-## 4. Decisions Deferred to M2
-
-### BD-004 — Short-Code Format and Generation
-
-**Status:** Deferred
-
-M2 must determine:
-
-- Character set and code length.
-- Generation strategy.
-- Collision handling.
-- Concurrency behaviour.
-- Reserved code patterns.
-- Database uniqueness enforcement.
-
-Base62 is a candidate, not an approved implementation requirement.
-
-### BD-011 — Routing Namespace
-
-**Status:** Deferred
-
-M2 must define the public redirect path format and reserved routes for:
-
-- API endpoints.
-- Health endpoints.
-- Frontend routes.
-- Static assets.
-- Operational endpoints, where applicable.
-
-The routing design must prevent collisions between public short codes and application routes.
-
-## 5. Additional Open Decisions
+## 4. Additional Open Decisions
 
 | ID | Topic | Required Outcome | Target |
 |---|---|---|---|
 | OD-001 | Performance targets | Measurable workload and response-time objectives | M2/M5 |
 | OD-002 | Browser support | Supported browser/version policy | M2/M4 |
-| OD-003 | Operator disabling | Authorised operational mechanism | M2 |
+| OD-003 | Operator disabling | Restricted internal maintenance command; access/audit controls pending | M3/M6 |
 | OD-004 | Hosting | Deployment topology and cost constraints | M2/M6 |
-| OD-005 | Health checks | Liveness and readiness semantics | M2 |
+| OD-005 | Health checks | Actuator selected; detailed liveness/readiness and exposure pending | M3/M6 |
 | OD-006 | Retention periods | Operational retention and cleanup policy | Before public release |
 | OD-007 | Abuse handling | Reporting, investigation and disabling procedure | M2/M5 |
-| OD-008 | URL parsing | Host, IP literal, IDN and character-counting details | M2 |
-| OD-009 | Creation failure semantics | Handling uncertain persistence outcomes | M2/M3 |
+| OD-008 | URL parsing | URI policy approved; IDN, IPv6 and character-counting test details pending | M3 |
+| OD-009 | Creation failure semantics | Bounded collision retries approved; ambiguous commit outcomes pending | M3 |
 
 Deferred decisions must be resolved before the implementation or release activities that depend on them.
 
-## 6. Decision Change Control
+## 5. Decision Change Control
 
 A material change to an approved decision requires:
 
@@ -223,14 +223,14 @@ A material change to an approved decision requires:
 6. Updates to affected design and test artefacts.
 7. Review through the project's version control process.
 
-## 7. Approval
+## 6. Approval
 
 | Field | Value |
 |---|---|
-| Approved Decisions | BD-001, BD-002, BD-005, BD-006 |
-| Proposed Decisions | BD-003, BD-007, BD-008, BD-009, BD-010, BD-012 |
-| Deferred Decisions | BD-004, BD-011 |
-| Overall Status | Pending Final Review |
+| Approved Decisions | BD-001, BD-002, BD-003, BD-004, BD-005, BD-006, BD-007, BD-008, BD-010, BD-011, BD-012 |
+| Proposed Decisions | BD-009 |
+| Deferred Decisions | None for the M2 design baseline |
+| Overall Status | Approved — M2 Design Baseline |
 | Approval Authority | Project Owner |
 
 ---
@@ -240,3 +240,4 @@ A material change to an approved decision requires:
 | Version | Date | Description |
 |---|---|---|
 | 0.1.0 | 2026-11-13 | Initial requirements decision log |
+| 0.1.1 | 2026-11-22 | Reconciled approved M2 policies and remaining release dependencies |
