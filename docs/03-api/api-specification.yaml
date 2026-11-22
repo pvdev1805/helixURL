@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: HelixURL Public API
+  version: 0.1.0
+  description: |
+    HelixURL MVP API contract for anonymous URL creation
+    and redirection.
+
+    Creation requests are limited to 10 requests per minute
+    per identified client and a maximum body size of 8,192 bytes.
+
+    HTTP 302 redirects and HTTP 404 unavailable-link responses
+    include Cache-Control: no-store.
+servers:
+  - url: http://localhost:8080
+    description: Local development (example)
+  - url: https://helixurl.example
+    description: Illustrative public origin; not a deployed service
+
+tags:
+  - name: URLs
+    description: Anonymous URL creation
+  - name: Redirects
+    description: Resolve short codes
+
+paths:
+  /api/v1/urls:
+    post:
+      tags: [URLs]
+      operationId: createShortUrl
+      summary: Create a short URL
+      description: |
+        Creates a new mapping. Repeating the same request may create a different
+        short code; this operation is not idempotent. The server validates the
+        destination and optional expiration before persisting the mapping.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUrlRequest'
+            examples:
+              withExpiration:
+                value:
+                  originalUrl: https://example.com/articles/42
+                  expiresAt: '2026-12-01T10:00:00Z'
+              withoutExpiration:
+                value:
+                  originalUrl: https://example.com/articles/42
+      responses:
+        '201':
+          description: Mapping created and durably persisted
+          headers:
+            Location:
+              description: Absolute short URL created by the service
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUrlResponse'
+              example:
+                shortCode: aB3xY9k2
+                shortUrl: https://helixurl.example/aB3xY9k2
+                originalUrl: https://example.com/articles/42
+                createdAt: '2026-11-22T03:00:00Z'
+                expiresAt: '2026-12-01T10:00:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /{shortCode}:
+    get:
+      tags: [Redirects]
+      operationId: resolveShortUrl
+      summary: Redirect an eligible short URL
+      description: |
+        Returns HTTP 302 with the stored destination in Location when the
+        mapping exists, is not disabled, and has not expired. Unknown, expired,
+        and disabled mappings all return HTTP 404. Reserved root paths must be
+        excluded by routing and short-code generation rules (BD-011).
+      parameters:
+        - name: shortCode
+          in: path
+          required: true
+          description: Case-sensitive eight-character Base62 short code
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 8
+            pattern: '^[0-9A-Za-z]{8}$'
+          example: aB3xY9k2
+      responses:
+        '302':
+          description: Eligible mapping; follow the Location header
+          headers:
+            Location:
+              required: true
+              description: Stored destination URL
+              schema:
+                type: string
+                format: uri
+            Cache-Control:
+              required: true
+              description: Prevent storage of the redirect response
+              schema:
+                type: string
+                enum: [no-store]
+        '404':
+          description: Unknown, expired, or disabled mapping
+          headers:
+            Cache-Control:
+              required: true
+              description: Prevent storage of the unavailable-link response
+              schema:
+                type: string
+                enum: [no-store]
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: about:blank
+                title: Not Found
+                status: 404
+                detail: Short URL not found.
+                instance: /aB3xY9k2
+                errorCode: SHORT_URL_NOT_FOUND
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  schemas:
+    CreateUrlRequest:
+      type: object
+      additionalProperties: false
+      required: [originalUrl]
+      properties:
+        originalUrl:
+          type: string
+          minLength: 1
+          maxLength: 2048
+          format: uri
+          description: |
+            Absolute HTTP or HTTPS destination. Detailed destination safety
+            rules follow BD-008; the Unicode character-counting convention
+            will be verified during implementation.
+          example: https://example.com/articles/42
+        expiresAt:
+          type: string
+          format: date-time
+          description: |
+            Optional RFC 3339 timestamp with an explicit UTC offset
+            and second-level precision.
+
+            Must represent an instant strictly after the creation-time
+            reference and no later than 365 days after that reference.
+
+            Timestamps without an explicit UTC offset are rejected.
+          example: '2026-12-01T10:00:00Z'
+    CreateUrlResponse:
+      type: object
+      additionalProperties: false
+      required: [shortCode, shortUrl, originalUrl, createdAt, expiresAt]
+      properties:
+        shortCode:
+          type: string
+          minLength: 8
+          maxLength: 8
+          pattern: '^[0-9A-Za-z]{8}$'
+          description: Generated case-sensitive Base62 short code
+          example: aB3xY9k2
+        shortUrl:
+          type: string
+          format: uri
+          description: Absolute public short URL
+          example: https://helixurl.example/aB3xY9k2
+        originalUrl:
+          type: string
+          format: uri
+          description: Persisted destination URL
+          example: https://example.com/articles/42
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation instant, serialised in UTC
+          example: '2026-11-22T03:00:00Z'
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Expiration instant, or null when no expiration is scheduled
+          example: '2026-12-01T10:00:00Z'
+    Problem:
+      type: object
+      description: RFC 9457-style problem details with a stable application error code
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Bad Request
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+          example: The destination URL must use HTTP or HTTPS.
+        instance:
+          type: string
+          example: /api/v1/urls
+        errorCode:
+          type: string
+          example: INVALID_DESTINATION_URL
+  responses:
+    BadRequest:
+      description: Malformed request, invalid destination URL, or invalid expiration
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Bad Request
+            status: 400
+            detail: The destination URL must use HTTP or HTTPS.
+            instance: /api/v1/urls
+            errorCode: INVALID_DESTINATION_URL
+    RequestTooLarge:
+      description: Request body exceeds 8,192 bytes
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Content Too Large
+            status: 413
+            detail: Request body exceeds 8,192 bytes.
+            instance: /api/v1/urls
+            errorCode: REQUEST_TOO_LARGE
+    RateLimited:
+      description: More than 10 creation requests per minute from an identified client
+      headers:
+        Retry-After:
+          description: Retry delay when known
+          schema:
+            type: string
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Too Many Requests
+            status: 429
+            detail: Creation rate limit exceeded.
+            instance: /api/v1/urls
+            errorCode: RATE_LIMIT_EXCEEDED
+    InternalError:
+      description: Unexpected server failure; no internal details exposed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: Required dependency temporarily unavailable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

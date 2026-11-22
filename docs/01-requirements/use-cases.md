@@ -2,7 +2,7 @@
 
 **Document ID:** HLX-UCS-001  
 **Version:** 0.1.0  
-**Status:** Draft — Pending Review  
+**Status:** Approved — M1 Requirements Baseline
 **Project:** HelixURL  
 **Target Release:** MVP v0.1.0  
 **Document Owner:** Project Owner  
@@ -825,10 +825,10 @@ This document is ready for baseline approval when:
 | Field | Value |
 |---|---|
 | Document Owner | Project Owner |
-| Review Status | Pending Review |
+| Review Status | Approved — M1 Requirements Baseline |
 | Approval Authority | Project Owner |
 | Approval Date | To be determined |
-| Baseline Status | Not Yet Approved |
+| Baseline Status | Approved — M1 Requirements Baseline |
 
 This document will be reviewed together with the remaining Requirements Engineering deliverables before the M1 baseline is approved.
 

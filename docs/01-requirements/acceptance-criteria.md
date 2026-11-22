@@ -2,7 +2,7 @@
 
 **Document ID:** HLX-ACS-001  
 **Version:** 0.1.0  
-**Status:** Draft — Pending Review  
+**Status:** Approved — M1 Requirements Baseline
 **Project:** HelixURL  
 **Target Release:** MVP v0.1.0  
 **Document Owner:** Project Owner  
@@ -110,22 +110,22 @@ Approval of an acceptance criterion does not mean that the implementation has pa
 
 ### 3.5 Policy Dependencies
 
-Several criteria depend on policy values that are still awaiting final approval.
+The M2 policy decisions have been approved. Retention periods and selected implementation/release details remain open.
 
-The following values include both approved policies and outstanding proposals:
+The following values distinguish approved policies from outstanding proposals:
 
 | Policy | Value / Proposal | Related Decision | Status |
 |---|---|---|---|
 | Maximum destination URL length | 2,048 characters | BD-001 | Approved |
 | Maximum expiration duration | 365 days | BD-002 | Approved |
-| Expiration timestamp representation | ISO 8601 / RFC 3339-compatible | BD-003 | Proposed |
+| Expiration timestamp representation | RFC 3339, explicit UTC offset, seconds precision | BD-003 | Approved |
 | Redirect status | HTTP 302 Found | BD-005 | Approved |
 | Unknown, expired, and disabled response | HTTP 404 Not Found | BD-006 | Approved |
-| Rate-limit thresholds | To be determined | BD-007 | Proposed |
-| Destination acceptance policy | To be refined | BD-008 | Proposed |
+| Rate-limit thresholds | 10 creation requests/minute/client; HTTP 429 | BD-007 | Approved |
+| Destination acceptance policy | HTTP/HTTPS, no userinfo, prohibited IP literals rejected | BD-008 | Approved |
 | Retention periods | To be determined | BD-009 | Proposed |
-| Request payload limit | To be determined | BD-010 | Proposed |
-| Redirect cache policy | To be determined | BD-012 | Proposed |
+| Request payload limit | 8,192 bytes; HTTP 413 | BD-010 | Approved |
+| Redirect cache policy | `Cache-Control: no-store` on 302 and 404 | BD-012 | Approved |
 
 Only scenarios depending on decisions still marked Proposed or Deferred remain provisional. See [Requirements Decision Log](./decision-log.md).
 
@@ -1376,10 +1376,10 @@ Open decisions must be resolved before the affected criteria can be fully verifi
 | Field | Value |
 |---|---|
 | Document Owner | Project Owner |
-| Review Status | Pending Review |
+| Review Status | Approved — M1 Requirements Baseline |
 | Approval Authority | Project Owner |
 | Approval Date | To be determined |
-| Baseline Status | Not Yet Approved |
+| Baseline Status | Approved — M1 Requirements Baseline |
 
 This document will be reviewed together with the remaining Requirements Engineering deliverables before the M1 baseline is approved.
 

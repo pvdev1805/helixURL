@@ -2,7 +2,7 @@
 
 **Document ID:** HLX-SRS-001  
 **Version:** 0.1.0  
-**Status:** Draft — Pending Review  
+**Status:** Approved — M1 Requirements Baseline
 **Project:** HelixURL  
 **Target Release:** MVP v0.1.0  
 **Document Owner:** Project Owner  
@@ -251,7 +251,7 @@ The system shall handle short-code generation conflicts without overwriting an e
 
 The system shall support retrieving a stored URL mapping using its short code.
 
-The short-code generation algorithm and format will be determined during system design.
+MVP short codes use eight-character, case-sensitive Base62 values generated using `SecureRandom` (BD-004).
 
 ### 3.4 URL Redirection
 
@@ -465,7 +465,7 @@ Successfully persisted mappings shall remain available after normal application 
 
 The system shall use a consistent time representation for stored timestamps and expiration comparisons.
 
-UTC-based storage and evaluation are proposed.
+Timestamp storage and comparisons use UTC instants; PostgreSQL uses `TIMESTAMPTZ` (TD-005).
 
 **DR-009 — Data Minimisation**
 
@@ -720,18 +720,18 @@ The following items require further analysis before the relevant requirements or
 |---|---|---|
 | OQ-001 | Maximum accepted destination URL length — resolved: 2,048 characters (BD-001) | Approved |
 | OQ-002 | Maximum allowed expiration duration — resolved: 365 days (BD-002) | Approved |
-| OQ-003 | Expiration input format and precision | M1 |
-| OQ-004 | Short-code character set and length | M2 |
-| OQ-005 | Short-code generation algorithm | M2 |
-| OQ-006 | Redirect status approved: HTTP 302 (BD-005); caching remains proposed (BD-012) | Partially resolved |
+| OQ-003 | RFC 3339, explicit UTC offset, second-level precision (BD-003) | Approved |
+| OQ-004 | Eight-character, case-sensitive Base62 (BD-004) | Approved |
+| OQ-005 | SecureRandom, unique DB constraint, five attempts (BD-004) | Approved |
+| OQ-006 | HTTP 302; no-store for 302 and 404 (BD-005, BD-012) | Approved |
 | OQ-007 | Unavailable-link response approved: HTTP 404 (BD-006) | Approved |
-| OQ-008 | Rate-limiting policy and thresholds | M1/M2 |
-| OQ-009 | Destination acceptance and abuse policy | M1 |
+| OQ-008 | 10 creation requests/minute/client; HTTP 429 (BD-007) | Approved |
+| OQ-009 | Baseline destination safety policy (BD-008); detailed edge-case tests pending | Approved policy; implementation pending |
 | OQ-010 | URL mapping and log retention periods | M1/M2 |
 | OQ-011 | Performance targets and representative workloads | M1/M5 |
 | OQ-012 | Frontend framework confirmation | M2 |
 | OQ-013 | Hosting provider and operational limitations | M2/M6 |
-| OQ-014 | Controlled link-disabling mechanism | M2 |
+| OQ-014 | Restricted internal maintenance command (TD-009); access controls pending | Approved design; implementation pending |
 | OQ-015 | Browser and accessibility verification targets | M1 |
 | OQ-016 | Public creation restrictions during initial demo | M1/M6 |
 
@@ -777,10 +777,10 @@ Approved changes must be reflected in the relevant documentation and version con
 | Field | Value |
 |---|---|
 | Document Owner | Project Owner |
-| Review Status | Pending Review |
+| Review Status | Approved — M1 Requirements Baseline |
 | Approval Authority | Project Owner |
 | Approval Date | To be determined |
-| Baseline Status | Not Yet Approved |
+| Baseline Status | Approved — M1 Requirements Baseline |
 
 This document will be reviewed together with the Business Rules, Use Cases, Acceptance Criteria, and Requirements Traceability Matrix before the M1 baseline is approved.
 
