@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: helixurl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: helixurl
+      POSTGRES_USER: helixurl
+      POSTGRES_PASSWORD: ${HELIXURL_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helixurl -d helixurl"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+    postgres_data:
